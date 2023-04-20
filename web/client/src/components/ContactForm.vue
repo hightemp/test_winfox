@@ -5,6 +5,12 @@
         quaerat distinctio rerum, exercitationem cum? Aut laudantium ipsam necessitatibus at commodi mollitia et
         praesentium?</p>
 
+    <div class="alert alert-success" role="alert" v-if="!resultErrors && resultMessage">
+        {{ resultMessage }}
+    </div>
+    <div class="alert alert-danger" role="alert" v-if="resultErrors">
+        {{ resultErrors }}
+    </div>
     <form class="w-25 m-auto" @submit.prevent="submitForm">
         <div class="form-group" :class="{ 'has-error': emailError }">
             <label for="email">Email</label>
@@ -28,6 +34,12 @@
 <script>
 import axios from 'axios';
 
+axios.interceptors.request.use((config) => {
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    config.headers['X-CSRF-Token'] = token;
+    return config;
+});
+
 export default {
     data() {
         return {
@@ -36,7 +48,9 @@ export default {
             lastName: '',
             emailError: '',
             firstNameError: '',
-            lastNameError: ''
+            lastNameError: '',
+            resultErrors: '',
+            resultMessage: '',
         };
     },
     components: {
@@ -65,16 +79,32 @@ export default {
                 return;
             }
 
-            axios.post('/contact', {
-                email: this.email,
-                firstName: this.firstName,
-                lastName: this.lastName
+            axios.post('?r=site/contact', {
+                Contact: {
+                    email: this.email,
+                    first_name: this.firstName,
+                    last_name: this.lastName
+                }
             })
                 .then(response => {
                     console.log(response.data);
+                    var respdata = response.data
+                    this.resultErrors = ""
+                    this.resultMessage = respdata.message
+                    if (respdata.status == "error") {
+                        this.resultErrors = respdata.message + "\n"
+                        if (respdata.errors) {
+                            for (var errlist of Object.entries(respdata.errors)) {
+                                console.log(errlist);
+                                this.resultErrors += errlist.join("\n")
+                            }
+                        }
+                    }
                 })
                 .catch(error => {
                     console.log(error);
+                    this.resultMessage = ""
+                    this.resultErrors = error
                 });
         },
         validateEmail(email) {
@@ -87,5 +117,8 @@ export default {
 <style>
 .error-block {
     color: red;
+}
+.alert {
+    white-space: pre-wrap;
 }
 </style>

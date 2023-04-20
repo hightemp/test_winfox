@@ -12,112 +12,39 @@ use app\models\Contact;
 
 class SiteController extends Controller
 {
-    /**
-     * {@inheritdoc}
-     */
+    public $enableCsrfValidation = false;
+
     public function behaviors()
     {
         return [
-            'access' => [
-                'class' => AccessControl::class,
-                'only' => ['logout'],
-                'rules' => [
-                    [
-                        'actions' => ['logout'],
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ],
-                ],
-            ],
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
-                    'logout' => ['post'],
+                    'contact' => ['post','get'],
                 ],
-            ],
+            ],   
         ];
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function actions()
-    {
-        return [
-            'error' => [
-                'class' => 'yii\web\ErrorAction',
-            ],
-            'captcha' => [
-                'class' => 'yii\captcha\CaptchaAction',
-                'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
-            ],
-        ];
-    }
-
-    /**
-     * Displays homepage.
-     *
-     * @return string
-     */
     public function actionIndex()
     {
         return $this->render('index');
     }
 
-    /**
-     * Login action.
-     *
-     * @return Response|string
-     */
-    public function actionLogin()
-    {
-        if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
-        }
-
-        $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
-        }
-
-        $model->password = '';
-        return $this->render('login', [
-            'model' => $model,
-        ]);
-    }
-
-    /**
-     * Logout action.
-     *
-     * @return Response
-     */
-    public function actionLogout()
-    {
-        Yii::$app->user->logout();
-
-        return $this->goHome();
-    }
-
-    /**
-     * Displays contact page.
-     *
-     * @return Response|string
-     */
     public function actionContact()
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
 
+        $json = Yii::$app->request->getRawBody();
+        $data = json_decode($json, true);
+
         $model = new Contact();
-        $data = [];
         
-        if ($model->validate()) {
-            if ($model->load(Yii::$app->request->post())) {
-                $data = [ "status" => "ok", "message" => "Сообщение отправлено" ];
-            } else {
-                $data = [ "status" => "error", "message" => "Ошибка" ];
-            }
+        if ($model->load($data) && $model->validate()) {
+            $model->save();
+            $data = [ "status" => "ok", "message" => "Сообщение отправлено" ];
         } else {
-            $data = [ "status" => "error", "message" => "Ошибка валидации" ];
+            $data = [ "status" => "error", "message" => "Ошибка" ];
         }
 
         $data["errors"] = $model->getErrors();
@@ -125,13 +52,4 @@ class SiteController extends Controller
         return $data;
     }
 
-    /**
-     * Displays about page.
-     *
-     * @return string
-     */
-    public function actionAbout()
-    {
-        return $this->render('about');
-    }
 }

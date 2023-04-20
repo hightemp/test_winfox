@@ -7,9 +7,9 @@ use Yii;
 /**
  * This is the model class for table "contacts".
  *
- * @property int $email
- * @property int $lastname
- * @property int $firstname
+ * @property string $email
+ * @property string $last_name
+ * @property string $first_name
  * @property int $id
  */
 class Contact extends \yii\db\ActiveRecord
@@ -28,7 +28,7 @@ class Contact extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['email', 'firstname', 'lastname'], 'required'],
+            [['email', 'first_name', 'last_name'], 'required'],
             ['email', 'email'],
         ];
     }
